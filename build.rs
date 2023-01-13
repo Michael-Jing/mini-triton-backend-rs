@@ -10,7 +10,7 @@ fn main() -> miette::Result<()> {
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
-        .header("tritonbackend.h")
+        .header("src/tritonbackend.h")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -31,9 +31,7 @@ fn main() -> miette::Result<()> {
     //     .unwrap();
     // // This assumes all your C++ bindings are in lib.rs
     // b.flag_if_supported("-std=c++20")
-    //     .file("src/minimal.cc")
-    //     .compile("tburs"); // arbitrary library name, pick anything
+    //     .compile("exp-mini-backend"); // arbitrary library name, pick anything
     // println!("cargo:rerun-if-changed=src/lib.rs");
-    // Add instructions to link to any C++ libraries you need.
     Ok(())
 }
