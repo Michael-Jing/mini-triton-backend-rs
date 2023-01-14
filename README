@@ -1,0 +1,21 @@
+1. Get the minimal backend example from nvidia, https://github.com/triton-inference-server/backend/tree/main/examples
+
+2. modify volumes section docker-compose.yml to map the model_repos/minimal_models in to a container
+
+3. build images and start docker
+
+4. cargo build
+
+5. cp target/debug/libtriton_minimal.so /opt/tritonserver/backends/minimal/
+
+6. go inside docker and start triton server
+```
+	docker exec -it <container name> /bin/bash
+	
+```
+then inside docker
+`
+	tritonserver --model-repository=/models
+`
+7. from host machine, run minimal_client https://github.com/triton-inference-server/backend/blob/main/examples/clients/minimal_client
+
