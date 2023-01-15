@@ -2,6 +2,8 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+mod wrapper;
+
 mod triton {
     mod backend {
         mod exp_mini_backend {
