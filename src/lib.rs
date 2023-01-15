@@ -62,16 +62,13 @@ mod triton {
                     let mut memory_type = TRITONSERVER_memorytype_enum_TRITONSERVER_MEMORY_CPU;
                     let mut memory_type_id: i64 = 0;
                     unsafe {
-                        let err = TRITONBACKEND_OutputBuffer(
+                        RETURN_IF_ERROR!(TRITONBACKEND_OutputBuffer(
                             *output,
                             buffer,
                             buffer_byte_size,
                             &mut memory_type as *mut u32,
                             &mut memory_type_id as *mut i64,
-                        );
-                        if !err.is_null() {
-                            return err;
-                        }
+                        ));
                     }
                     let mut buffer: *mut *mut f32 = buffer as *mut *mut f32;
                     unsafe {
@@ -81,6 +78,7 @@ mod triton {
                         }
                     }
                     unsafe {
+                        // notes for safe wrap: TRITONBACKEND_ResponseSend  takes ownership of response;
                         TRITONBACKEND_ResponseSend(
                         response,
                         tritonserver_responsecompleteflag_enum_TRITONSERVER_RESPONSE_COMPLETE_FINAL,
