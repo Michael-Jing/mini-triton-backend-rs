@@ -4,9 +4,11 @@ use std::mem::MaybeUninit;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
+#[derive(Debug)]
 pub struct TritonError {
     _error: *mut TRITONSERVER_Error,
 }
+#[derive(Debug)]
 pub struct Error {
     msg: String,
 }
@@ -163,6 +165,10 @@ pub struct Request {
     _request: *mut TRITONBACKEND_Request,
 }
 impl Request {
+    pub fn new(request: *mut TRITONBACKEND_Request) -> Result<Self, TritonError> {
+        return Ok(Request { _request: request })
+
+    }
     pub fn InputCount(&self) -> Result<u32, TritonError> {
         let mut count = 0;
         let err = unsafe { TRITONBACKEND_RequestInputCount(self._request, &mut count) };

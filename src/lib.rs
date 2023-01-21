@@ -6,11 +6,13 @@ mod wrapper;
 
 mod triton {
     mod backend {
-        mod exp_mini_backend {
+        mod minimal {
             include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
             use core::ffi;
             // use cxx::{CxxString, CxxVector};
             use std::ffi::CString;
+
+            use crate::wrapper::{Response, Request, self};
 
             macro_rules! RETURN_ERROR_IF_TRUE {
                 ($P: expr, $C: expr, $M: expr) => {
@@ -37,56 +39,17 @@ mod triton {
             ) -> *mut TRITONSERVER_Error {
                 // usable functions TRITONBACKEND_ResponseNew
                 for r in 0..request_count {
-                    let mut response: *mut TRITONBACKEND_Response =
-                        std::ptr::null_mut() as *mut TRITONBACKEND_Response;
-                    unsafe {
-                        let request: *mut TRITONBACKEND_Request = *requests.offset(r as isize); // as *mut ffi::TRITONBACKEND_Request;
-                        RETURN_IF_ERROR!(TRITONBACKEND_ResponseNew(&mut response, request));
-                    }
-                    let mut output: Box<*mut TRITONBACKEND_Output> =
-                        Box::new(std::ptr::null_mut() as *mut TRITONBACKEND_Output);
-                    let mut output = Box::into_raw(output);
-                    let nameRaw = CString::new("OUT0").unwrap();
-                    let name: *const std::ffi::c_char = nameRaw.as_ptr();
-                    let datatype: TRITONSERVER_DataType =
-                        TRITONSERVER_datatype_enum_TRITONSERVER_TYPE_FP32;
-                    let shape: i64 = 4;
-                    let dims_count = 1;
-                    unsafe {
-                        TRITONBACKEND_ResponseOutput(
-                            response, output, name, datatype, &shape, dims_count,
-                        );
-                    }
-                    let mut buffer: Box<*mut ffi::c_void> =
-                        Box::new(std::ptr::null_mut() as *mut ffi::c_void);
-                    let mut buffer = Box::into_raw(buffer);
-                    let buffer_byte_size = 16;
-                    let mut memory_type = TRITONSERVER_memorytype_enum_TRITONSERVER_MEMORY_CPU;
-                    let mut memory_type_id: i64 = 0;
-                    unsafe {
-                        RETURN_IF_ERROR!(TRITONBACKEND_OutputBuffer(
-                            *output,
-                            buffer,
-                            buffer_byte_size,
-                            &mut memory_type as *mut u32,
-                            &mut memory_type_id as *mut i64,
-                        ));
-                    }
-                    let mut buffer: *mut *mut f32 = buffer as *mut *mut f32;
-                    unsafe {
-                        let mut begin = *buffer;
-                        for i in 0..4 {
-                            *begin.offset(i) = (i * 4) as f32;
-                        }
-                    }
-                    unsafe {
-                        // notes for safe wrap: TRITONBACKEND_ResponseSend  takes ownership of response;
-                        TRITONBACKEND_ResponseSend(
-                        response,
-                        tritonserver_responsecompleteflag_enum_TRITONSERVER_RESPONSE_COMPLETE_FINAL,
-                        std::ptr::null_mut() as *mut TRITONSERVER_Error,
-                    );
-                    }
+                    
+                        let raw_request: *mut TRITONBACKEND_Request = unsafe {*requests.offset(r as isize) };
+                        let request = Request::new(raw_request as *mut wrapper::TRITONBACKEND_Request).unwrap();
+
+                    
+                    let response = Response::new(request).unwrap();
+                    let output = response.get_output("OUT0".to_owned(), TRITONSERVER_datatype_enum_TRITONSERVER_TYPE_FP32, vec![4]).unwrap();
+                    let buffer = output.get_buffer(16, TRITONSERVER_memorytype_enum_TRITONSERVER_MEMORY_CPU , 0).unwrap();
+                    buffer.write(vec![10, 9, 8, 7]).unwrap();
+                    response.send(tritonserver_responsecompleteflag_enum_TRITONSERVER_RESPONSE_COMPLETE_FINAL, None );
+                    
                 }
 
                 // call ResponseOutput first and then ResponseSend, OutputBuffer can be used to get a buffer to fill data in
