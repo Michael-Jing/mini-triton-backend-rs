@@ -276,15 +276,15 @@ impl Output {
         let mut err: *mut TRITONSERVER_Error = std::ptr::null_mut() as *mut TRITONSERVER_Error;
         let mut memory_type = memory_type;
         let mut memory_type_id = memory_type_id;
-        unsafe {
-            err = TRITONBACKEND_OutputBuffer(
+        err = unsafe{
+             TRITONBACKEND_OutputBuffer(
                 self._output,
                 &mut buffer,
                 buffer_byte_size,
                 &mut memory_type as *mut u32,    //both input and output
                 &mut memory_type_id as *mut i64, // both input and output
-            );
-        }
+            )
+        };
         return if err.is_null() {
             Ok(Buffer {
                 _buffer: buffer,

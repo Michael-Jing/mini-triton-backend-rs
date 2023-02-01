@@ -40,8 +40,8 @@ mod triton {
                 // usable functions TRITONBACKEND_ResponseNew
                 for r in 0..request_count {
                     
-                        let raw_request: *mut TRITONBACKEND_Request = unsafe {*requests.offset(r as isize) };
-                        let request = Request::new(raw_request as *mut wrapper::TRITONBACKEND_Request).unwrap();
+                    let raw_request: *mut TRITONBACKEND_Request = unsafe {*requests.offset(r as isize) };
+                    let request = Request::new(raw_request as *mut wrapper::TRITONBACKEND_Request).unwrap();
 
                     
                     let response = Response::new(request).unwrap();
