@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+use std::ffi::{CStr};
 use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 
@@ -16,23 +16,35 @@ pub struct Input {
     _input: *mut TRITONBACKEND_Input,
 }
 
+#[derive(Debug)]
 pub struct InputProperties<'a> {
-    name: Option<&'a str>,
-    datatype: Option<TRITONSERVER_DataType>,
+    name: &'a str,
+    datatype: TRITONSERVER_DataType,
     shape: Option<&'a [i64]>,
-    dims_count: Option<u32>,
-    byte_size: Option<u64>,
-    buffer_count: Option<u32>,
+    dims_count: u32,
+    byte_size: u64,
+    buffer_count: u32,
     phantom: PhantomData<&'a Input>,
 }
-pub struct Buffer {
-    _buffer: *const std::os::raw::c_void,
+
+pub struct OutputBuffer {
+    pub _buffer: *const std::os::raw::c_void,
     buffer_byte_size: u64,
     memory_type: TRITONSERVER_MemoryType,
     memory_type_id: i64,
 }
 
-impl Buffer {
+
+pub struct InputBuffer {
+    pub _buffer: *const std::os::raw::c_void,
+    pub buffer_byte_size: u64,
+    memory_type: TRITONSERVER_MemoryType,
+    memory_type_id: i64,
+}
+
+impl InputBuffer {}
+
+impl OutputBuffer {
     pub fn write<T>(&self, data: Vec<T>) -> Result<(), Error> {
         if data.is_empty() {
             return Err(Error {
@@ -54,85 +66,77 @@ impl Buffer {
         }
         Ok(())
     }
+
+    pub fn write_fp32(&self, data: Vec<f32>) -> Result<(), Error> {
+        if data.is_empty() {
+            return Err(Error {
+                msg: "data is empty".to_owned(),
+            });
+        }
+        let ele_size = std::mem::size_of_val(&data[0]);
+        if ele_size * data.len() > self.buffer_byte_size as usize {
+            return Err(Error {
+                msg: "buffer size is too small to hold all data".to_owned(),
+            });
+        }
+        let mut buffer = self._buffer as *mut f32;
+        unsafe {
+            let begin = buffer;
+            for (i, d) in data.into_iter().enumerate() {
+                *begin.offset(i as isize) = d;
+            }
+        }
+        Ok(())
+    }
 }
 impl Input {
-    pub fn InputProperties(&self) -> Result<InputProperties, TritonError> {
+    pub fn get_input_properties(&self) -> Result<InputProperties, TritonError> {
         let mut name: *mut *const std::os::raw::c_char =
-            std::ptr::null_mut() as *mut *const std::os::raw::c_char;
-        let mut datatype: *mut TRITONSERVER_DataType =
-            std::ptr::null_mut() as *mut TRITONSERVER_DataType;
-        let mut shapeRaw: *mut *const i64 = std::ptr::null_mut() as *mut *const i64;
-        let mut dims_count: *mut u32 = std::ptr::null_mut() as *mut u32;
-        let mut byte_size: *mut u64 = std::ptr::null_mut() as *mut u64;
-        let mut buffer_count: *mut u32 = std::ptr::null_mut() as *mut u32;
+            Box::into_raw(Box::new(0)) as *mut *const std::os::raw::c_char;
+        let mut datatype:  TRITONSERVER_DataType = 0;
+        let mut shapeRaw: *mut *const i64 = Box::into_raw(Box::new(0)) as *mut *const i64;
+        let mut dims_count:  u32 = 0;
+        let mut byte_size:  u64 = 0;
+        let mut buffer_count: u32 = 0;
+
+
         let err = unsafe {
             TRITONBACKEND_InputProperties(
                 self._input,
                 name,
-                datatype,
+                &mut datatype,
                 shapeRaw,
-                dims_count,
-                byte_size,
-                buffer_count,
+                &mut dims_count,
+                &mut byte_size,
+                &mut buffer_count,
             )
         };
-        let dims_count = if dims_count.is_null() {
-            None
-        } else {
-            Some(unsafe { *dims_count })
-        };
-
+        
         let shape = if shapeRaw.is_null() {
             None
-        } else if let None = dims_count {
-            None
         } else {
-            Some(unsafe { std::slice::from_raw_parts(*shapeRaw, dims_count.unwrap() as usize) })
+            Some(unsafe { std::slice::from_raw_parts(*shapeRaw, dims_count as usize) })
         };
 
         return if err.is_null() {
             Ok(InputProperties {
                 // fill in the fields
-                name: if name.is_null() {
-                    None
-                } else {
-                    unsafe { Some(CStr::from_ptr(*name).to_str().unwrap_or("")) }
-                },
+                name: 
+                    unsafe { CStr::from_ptr(*name).to_str().unwrap_or("") },
 
-                datatype: if datatype.is_null() {
-                    None
-                } else {
-                    unsafe { Some(*datatype) }
-                },
+                datatype,
                 shape,
                 dims_count,
-                byte_size: if byte_size.is_null() {
-                    None
-                } else {
-                    unsafe { Some(*byte_size) }
-                },
-                buffer_count: if buffer_count.is_null() {
-                    None
-                } else {
-                    unsafe { Some(*buffer_count) }
-                },
-                phantom: PhantomData,
+                byte_size,
+                buffer_count ,
+                               phantom: PhantomData,
             })
         } else {
             Err(TritonError { _error: err })
         };
     }
 
-    pub fn InputBuffer(&self, index: u32) -> Result<Buffer, TritonError> {
-        /*
-             TRITONBACKEND_InputBuffer(
-            input: *mut TRITONBACKEND_Input,
-            index: u32,
-            buffer: *mut *const ::std::os::raw::c_void,
-            buffer_byte_size: *mut u64,
-            memory_type: *mut TRITONSERVER_MemoryType,
-            memory_type_id: *mut i64,
-        ) -> *mut TRITONSERVER_Error; */
+    pub fn get_buffer(&self, index: u32) -> Result<InputBuffer, TritonError> {
         let mut buffer: *const std::os::raw::c_void =
             std::ptr::null() as *const std::os::raw::c_void;
         let mut buffer_byte_size: u64 = 0;
@@ -149,7 +153,7 @@ impl Input {
             )
         };
         return if err.is_null() {
-            Ok(Buffer {
+            Ok(InputBuffer {
                 _buffer: buffer,
                 buffer_byte_size,
                 memory_type,
@@ -169,7 +173,7 @@ impl Request {
         return Ok(Request { _request: request })
 
     }
-    pub fn InputCount(&self) -> Result<u32, TritonError> {
+    pub fn get_input_count(&self) -> Result<u32, TritonError> {
         let mut count = 0;
         let err = unsafe { TRITONBACKEND_RequestInputCount(self._request, &mut count) };
         return if err.is_null() {
@@ -179,7 +183,7 @@ impl Request {
         };
     }
 
-    pub fn InputByIndex(&self, index: u32) -> Result<Input, TritonError> {
+    pub fn get_input_by_index(&self, index: u32) -> Result<Input, TritonError> {
         /*
              TRITONBACKEND_RequestInputByIndex(
             request: *mut TRITONBACKEND_Request,
@@ -198,7 +202,7 @@ impl Request {
 }
 
 pub struct Response {
-    _response: *mut TRITONBACKEND_Response,
+    pub _response: *mut TRITONBACKEND_Response,
 }
 
 pub struct Output {
@@ -271,7 +275,7 @@ impl Output {
         buffer_byte_size: u64,
         memory_type: TRITONSERVER_MemoryType,
         memory_type_id: i64,
-    ) -> Result<Buffer, TritonError> {
+    ) -> Result<OutputBuffer, TritonError> {
         let mut buffer: *mut std::ffi::c_void = std::ptr::null_mut() as *mut std::ffi::c_void;
         let mut err: *mut TRITONSERVER_Error = std::ptr::null_mut() as *mut TRITONSERVER_Error;
         let mut memory_type = memory_type;
@@ -286,7 +290,7 @@ impl Output {
             )
         };
         return if err.is_null() {
-            Ok(Buffer {
+            Ok(OutputBuffer {
                 _buffer: buffer,
                 buffer_byte_size,
                 memory_type,
