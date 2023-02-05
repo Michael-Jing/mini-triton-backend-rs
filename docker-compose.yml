@@ -6,7 +6,7 @@ services:
       context: "."
       dockerfile: "Dockerfile"
     volumes:
-      - "/home/mi/Documents/code/triton/backend/examples/model_repos/minimal_models:/models"
+      - ${PWD}/model_repos/minimal_models:/models"
       - ${PWD}/:/workspace/exp-mini-backend
     command: sleep infinity  
     ports:
