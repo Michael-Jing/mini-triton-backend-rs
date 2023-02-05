@@ -37,7 +37,7 @@ pub struct OutputBuffer {
 }
 
 pub struct InputBuffer<'a, T> {
-    pub _buffer:  *const T,
+    pub _buffer: *const T,
     offset: isize,
     pub buffer_byte_size: u64,
     memory_type: TRITONSERVER_MemoryType,
@@ -45,14 +45,16 @@ pub struct InputBuffer<'a, T> {
     phantom: PhantomData<&'a Input>,
 }
 
-impl<'a, T> Iterator for InputBuffer<'a, T> where T: Clone{
-
+impl<'a, T> Iterator for InputBuffer<'a, T>
+where
+    T: Clone,
+{
     // We can refer to this type using Self::Item
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         if ((self.offset + 1) as usize * mem::size_of::<T>()) as u64 <= self.buffer_byte_size {
-            let current = unsafe {(*self._buffer.offset(self.offset)).clone() };
+            let current = unsafe { (*self._buffer.offset(self.offset)).clone() };
             self.offset += 1;
 
             Some(current)
@@ -228,6 +230,94 @@ impl Request {
         } else {
             Err(TritonError { _error: err })
         };
+    }
+    pub fn get_input(&self, name: &str) -> Result<Input, TritonError> {
+        /* TRITONBACKEND_RequestInput(
+    struct TRITONBACKEND_Request* request, const char* name,
+    struct TRITONBACKEND_Input** input); */
+            let mut input: *mut TRITONBACKEND_Input = std::ptr::null_mut() as *mut TRITONBACKEND_Input;
+            let name = CString::new(name).unwrap();
+            let err = unsafe {
+                TRITONBACKEND_RequestInput(self._request, name.as_ptr(), &mut input) 
+            };
+             return if err.is_null() {
+            Ok(Input { _input: input })
+        } else {
+            Err(TritonError { _error: err })
+        };
+
+    }
+    pub fn get_input_name(&self, index: u32) -> Result<&str, TritonError> {
+        /* TRITONBACKEND_RequestInputName(
+    struct TRITONBACKEND_Request* request, const uint32_t index,
+    const char** input_name); */
+        let name = CString::new("").unwrap();
+        let mut name = name.as_ptr();
+        let err = unsafe {
+        TRITONBACKEND_RequestInputName(self._request, index, &mut name) };
+        return if err.is_null() {
+            let name = unsafe {CStr::from_ptr(name).to_str().unwrap_or("")};
+            Ok(name)
+        } else {
+            Err(TritonError {_error: err})
+        };
+    }
+    pub fn get_output_name(&self, index: u32) -> Result<&str, TritonError> {
+        /* TRITONBACKEND_RequestInputName(
+    struct TRITONBACKEND_Request* request, const uint32_t index,
+    const char** input_name); */
+        let name = CString::new("").unwrap();
+        let mut name = name.as_ptr();
+        let err = unsafe {
+        TRITONBACKEND_RequestOutputName(self._request, index, &mut name) };
+        return if err.is_null() {
+            let name = unsafe {CStr::from_ptr(name).to_str().unwrap_or("")};
+            Ok(name)
+        } else {
+            Err(TritonError {_error: err})
+        };
+    }
+    pub fn get_id(&self) -> Result<&str, TritonError> {
+        let id = CString::new("").unwrap();
+        let mut id = id.as_ptr();
+        let err = unsafe { TRITONBACKEND_RequestId(self._request, &mut id) };
+        return if err.is_null() {
+            let id = unsafe { CStr::from_ptr(id).to_str().unwrap_or("") };
+            Ok(id)
+        } else {
+            Err(TritonError { _error: err })
+        };
+    }
+
+    pub fn get_correlation_id(&self) -> Result<u64, TritonError> {
+        let mut id = 0;
+        let err = unsafe {TRITONBACKEND_RequestCorrelationId(self._request, &mut id)};
+        return if err.is_null() {
+            Ok(id)
+        } else {
+            Err(TritonError{_error: err})
+        }
+    }
+    pub fn get_correlation_id_string(&self) -> Result<&str, TritonError> {
+        let id = CString::new("").unwrap();
+        let mut id = id.as_ptr();
+        let err = unsafe { TRITONBACKEND_RequestCorrelationIdString(self._request, &mut id) };
+        return if err.is_null() {
+            let id = unsafe { CStr::from_ptr(id).to_str().unwrap_or("") };
+            Ok(id)
+        } else {
+            Err(TritonError { _error: err })
+        };
+    }
+
+    pub fn get_flags(&self) -> Result<u32, TritonError> {
+        let mut id = 0;
+        let err = unsafe {TRITONBACKEND_RequestFlags(self._request, &mut id)};
+        return if err.is_null() {
+            Ok(id)
+        } else {
+            Err(TritonError{_error: err})
+        }
     }
 }
 
