@@ -1,5 +1,6 @@
-use std::ffi::{CStr};
+use std::ffi::CStr;
 use std::marker::PhantomData;
+use std::mem;
 use std::mem::MaybeUninit;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
@@ -32,17 +33,34 @@ pub struct OutputBuffer {
     buffer_byte_size: u64,
     memory_type: TRITONSERVER_MemoryType,
     memory_type_id: i64,
+    datatype: TRITONSERVER_DataType,
 }
 
-
-pub struct InputBuffer {
-    pub _buffer: *const std::os::raw::c_void,
+pub struct InputBuffer<'a, T> {
+    pub _buffer:  *const T,
+    offset: isize,
     pub buffer_byte_size: u64,
     memory_type: TRITONSERVER_MemoryType,
     memory_type_id: i64,
+    phantom: PhantomData<&'a Input>,
 }
 
-impl InputBuffer {}
+impl<'a, T> Iterator for InputBuffer<'a, T> where T: Clone{
+
+    // We can refer to this type using Self::Item
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if ((self.offset + 1) as usize * mem::size_of::<T>()) as u64 <= self.buffer_byte_size {
+            let current = unsafe {(*self._buffer.offset(self.offset)).clone() };
+            self.offset += 1;
+
+            Some(current)
+        } else {
+            None
+        }
+    }
+}
 
 impl OutputBuffer {
     pub fn write<T>(&self, data: Vec<T>) -> Result<(), Error> {
@@ -90,15 +108,17 @@ impl OutputBuffer {
     }
 }
 impl Input {
+    pub fn get_input_properties_for_host_policy() {
+        todo!()
+    }
     pub fn get_input_properties(&self) -> Result<InputProperties, TritonError> {
         let mut name: *mut *const std::os::raw::c_char =
             Box::into_raw(Box::new(0)) as *mut *const std::os::raw::c_char;
-        let mut datatype:  TRITONSERVER_DataType = 0;
+        let mut datatype: TRITONSERVER_DataType = 0;
         let mut shapeRaw: *mut *const i64 = Box::into_raw(Box::new(0)) as *mut *const i64;
-        let mut dims_count:  u32 = 0;
-        let mut byte_size:  u64 = 0;
+        let mut dims_count: u32 = 0;
+        let mut byte_size: u64 = 0;
         let mut buffer_count: u32 = 0;
-
 
         let err = unsafe {
             TRITONBACKEND_InputProperties(
@@ -111,7 +131,7 @@ impl Input {
                 &mut buffer_count,
             )
         };
-        
+
         let shape = if shapeRaw.is_null() {
             None
         } else {
@@ -121,27 +141,32 @@ impl Input {
         return if err.is_null() {
             Ok(InputProperties {
                 // fill in the fields
-                name: 
-                    unsafe { CStr::from_ptr(*name).to_str().unwrap_or("") },
+                name: unsafe { CStr::from_ptr(*name).to_str().unwrap_or("") },
 
                 datatype,
                 shape,
                 dims_count,
                 byte_size,
-                buffer_count ,
-                               phantom: PhantomData,
+                buffer_count,
+                phantom: PhantomData,
             })
         } else {
             Err(TritonError { _error: err })
         };
     }
 
-    pub fn get_buffer(&self, index: u32) -> Result<InputBuffer, TritonError> {
+    pub fn get_buffer<T>(
+        &self,
+        index: u32,
+        memory_type: TRITONSERVER_MemoryType,
+        memory_type_id: i64,
+        example_value: T,
+    ) -> Result<InputBuffer<T>, TritonError> {
         let mut buffer: *const std::os::raw::c_void =
             std::ptr::null() as *const std::os::raw::c_void;
         let mut buffer_byte_size: u64 = 0;
-        let mut memory_type: TRITONSERVER_MemoryType = 0;
-        let mut memory_type_id: i64 = 0;
+        let mut memory_type: TRITONSERVER_MemoryType = memory_type;
+        let mut memory_type_id: i64 = memory_type_id;
         let err = unsafe {
             TRITONBACKEND_InputBuffer(
                 self._input,
@@ -152,12 +177,18 @@ impl Input {
                 &mut memory_type_id,
             )
         };
+        /* let buffer = match datatype {
+            TRITONSERVER_datatype_enum_TRITONSERVER_TYPE_BOOL => buffer as *const bool,
+          TRITONSERVER_datatype_enum_TRITONSERVER_TYPE_UINT8 => buffer as *const u8,
+        }; */
         return if err.is_null() {
             Ok(InputBuffer {
-                _buffer: buffer,
+                _buffer: buffer as *const T,
+                offset: 0,
                 buffer_byte_size,
                 memory_type,
                 memory_type_id,
+                phantom: PhantomData,
             })
         } else {
             Err(TritonError { _error: err })
@@ -170,8 +201,7 @@ pub struct Request {
 }
 impl Request {
     pub fn new(request: *mut TRITONBACKEND_Request) -> Result<Self, TritonError> {
-        return Ok(Request { _request: request })
-
+        return Ok(Request { _request: request });
     }
     pub fn get_input_count(&self) -> Result<u32, TritonError> {
         let mut count = 0;
@@ -275,13 +305,14 @@ impl Output {
         buffer_byte_size: u64,
         memory_type: TRITONSERVER_MemoryType,
         memory_type_id: i64,
+        datatype: TRITONSERVER_DataType,
     ) -> Result<OutputBuffer, TritonError> {
         let mut buffer: *mut std::ffi::c_void = std::ptr::null_mut() as *mut std::ffi::c_void;
         let mut err: *mut TRITONSERVER_Error = std::ptr::null_mut() as *mut TRITONSERVER_Error;
         let mut memory_type = memory_type;
         let mut memory_type_id = memory_type_id;
-        err = unsafe{
-             TRITONBACKEND_OutputBuffer(
+        err = unsafe {
+            TRITONBACKEND_OutputBuffer(
                 self._output,
                 &mut buffer,
                 buffer_byte_size,
@@ -295,6 +326,7 @@ impl Output {
                 buffer_byte_size,
                 memory_type,
                 memory_type_id,
+                datatype,
             })
         } else {
             Err(TritonError { _error: err })
@@ -313,3 +345,24 @@ impl Drop for Request {
          */
     }
 }
+
+/*
+
+TRITONBACKEND_DECLSPEC struct TRITONSERVER_Error* TRITONBACKEND_ApiVersion(
+    uint32_t* major, uint32_t* minor); */
+pub struct TritonApiVersion {
+    major: u32,
+    minor: u32,
+}
+pub fn get_backend_api_version() -> Result<TritonApiVersion, TritonError> {
+    let mut major: u32 = 0;
+    let mut minor: u32 = 0;
+    let err = unsafe { TRITONBACKEND_ApiVersion(&mut major, &mut minor) };
+    return if err.is_null() {
+        Ok(TritonApiVersion { major, minor })
+    } else {
+        Err(TritonError { _error: err })
+    };
+}
+
+// TODO: memory manager

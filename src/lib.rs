@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+
 mod triton {
     mod backend {
         mod minimal {
@@ -54,19 +55,17 @@ mod triton {
                     let mut data: Vec<f32> = vec![];
                     for i in 0..input_count {
                         let input = request.get_input_by_index(i).unwrap();
-                         
+
                         let input_properties = input.get_input_properties().unwrap();
                         println!("input properties is {:?}", input_properties);
                         let buffer_count = input_properties.buffer_count;
                         let datatype = input_properties.datatype;
                         for j in 0..buffer_count {
-                            let input_buffer = input.get_buffer(j).unwrap();
-                            let raw_pointer = input_buffer._buffer as *mut i32;
-                            let buffer_byte_size = input_buffer.buffer_byte_size;
-                            for k in 0..(buffer_byte_size / 4) {
-                                unsafe {
-                                    data.push(*raw_pointer.offset(k as isize) as f32 * 2.);
-                                }
+                            let input_buffer = input.get_buffer(j, 0, 0, 0 as i32).unwrap();
+                            for n in input_buffer.into_iter()
+                            {
+                                data.push(n as f32 * 2.0);
+                                println!("n is {:?}", n);
                             }
                         }
                     }
@@ -80,9 +79,14 @@ mod triton {
                         )
                         .unwrap();
                     let buffer = output
-                        .get_buffer(16, TRITONSERVER_memorytype_enum_TRITONSERVER_MEMORY_CPU, 0)
+                        .get_buffer(
+                            16,
+                            TRITONSERVER_memorytype_enum_TRITONSERVER_MEMORY_CPU,
+                            0,
+                            TRITONSERVER_datatype_enum_TRITONSERVER_TYPE_FP32,
+                        )
                         .unwrap();
-                    // let data: Vec<f32> = vec![10., 9., 8., 1.];
+                    //let data: Vec<f32> = vec![10., 9., 8., 1.];
                     buffer.write(data).unwrap(); // datatype should match the expected datatype, otherwise the write may result in a slient fail or segmentation fault
 
                     response.send(
