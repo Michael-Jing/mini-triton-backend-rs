@@ -1,8 +1,7 @@
-1. Get the minimal backend example from nvidia, https://github.com/triton-inference-server/backend/tree/main/examples
 
-2. modify volumes section docker-compose.yml to map the model_repos/minimal_models in to a container
 
-3. build images and start docker
+1. build images and start docker
+	`docker compose up -d`
 
 4. cargo build
 
