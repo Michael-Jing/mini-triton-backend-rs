@@ -1259,6 +1259,8 @@ TRITONBACKEND_ModelInstanceReportBatchStatistics(
     const uint64_t exec_start_ns, const uint64_t compute_start_ns,
     const uint64_t compute_end_ns, const uint64_t exec_end_ns);
 
+/*********************************************************************/
+/*********************************************************************/
 ///
 /// The following functions can be implemented by a backend. Functions
 /// indicated as required must be implemented or the backend will fail

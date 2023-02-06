@@ -7,7 +7,7 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 #[derive(Debug)]
 pub struct TritonError {
-    _error: *mut TRITONSERVER_Error,
+    _err: *mut TRITONSERVER_Error,
 }
 #[derive(Debug)]
 pub struct Error {
@@ -26,6 +26,10 @@ pub struct InputProperties<'a> {
     byte_size: u64,
     buffer_count: u32,
     phantom: PhantomData<&'a Input>,
+}
+
+pub struct ResponseFactory {
+    _factory: *mut TRITONBACKEND_ResponseFactory,
 }
 
 pub struct OutputBuffer {
@@ -49,14 +53,12 @@ impl<'a, T> Iterator for InputBuffer<'a, T>
 where
     T: Clone,
 {
-    // We can refer to this type using Self::Item
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         if ((self.offset + 1) as usize * mem::size_of::<T>()) as u64 <= self.buffer_byte_size {
             let current = unsafe { (*self._buffer.offset(self.offset)).clone() };
             self.offset += 1;
-
             Some(current)
         } else {
             None
@@ -153,7 +155,7 @@ impl Input {
                 phantom: PhantomData,
             })
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
         };
     }
 
@@ -193,7 +195,7 @@ impl Input {
                 phantom: PhantomData,
             })
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
         };
     }
 }
@@ -211,7 +213,16 @@ impl Request {
         return if err.is_null() {
             Ok(count)
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
+        };
+    }
+    pub fn get_output_count(&self) -> Result<u32, TritonError> {
+        let mut count = 0;
+        let err = unsafe { TRITONBACKEND_RequestOutputCount(self._request, &mut count) };
+        return if err.is_null() {
+            Ok(count)
+        } else {
+            Err(TritonError { _err: err })
         };
     }
 
@@ -221,60 +232,54 @@ impl Request {
             request: *mut TRITONBACKEND_Request,
             index: u32,
             input: *mut *mut TRITONBACKEND_Input,
-        ) -> *mut TRITONSERVER_Error;
+        ) -> *mut TRITONSERVER_err;
          */
         let mut input: *mut TRITONBACKEND_Input = std::ptr::null_mut() as *mut TRITONBACKEND_Input;
         let err = unsafe { TRITONBACKEND_RequestInputByIndex(self._request, index, &mut input) };
         return if err.is_null() {
             Ok(Input { _input: input })
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
         };
     }
     pub fn get_input(&self, name: &str) -> Result<Input, TritonError> {
         /* TRITONBACKEND_RequestInput(
-    struct TRITONBACKEND_Request* request, const char* name,
-    struct TRITONBACKEND_Input** input); */
-            let mut input: *mut TRITONBACKEND_Input = std::ptr::null_mut() as *mut TRITONBACKEND_Input;
-            let name = CString::new(name).unwrap();
-            let err = unsafe {
-                TRITONBACKEND_RequestInput(self._request, name.as_ptr(), &mut input) 
-            };
-             return if err.is_null() {
+        struct TRITONBACKEND_Request* request, const char* name,
+        struct TRITONBACKEND_Input** input); */
+        let mut input: *mut TRITONBACKEND_Input = std::ptr::null_mut() as *mut TRITONBACKEND_Input;
+        let name = CString::new(name).unwrap();
+        let err = unsafe { TRITONBACKEND_RequestInput(self._request, name.as_ptr(), &mut input) };
+        return if err.is_null() {
             Ok(Input { _input: input })
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
         };
-
     }
+
     pub fn get_input_name(&self, index: u32) -> Result<&str, TritonError> {
         /* TRITONBACKEND_RequestInputName(
-    struct TRITONBACKEND_Request* request, const uint32_t index,
-    const char** input_name); */
+        struct TRITONBACKEND_Request* request, const uint32_t index,
+        const char** input_name); */
         let name = CString::new("").unwrap();
         let mut name = name.as_ptr();
-        let err = unsafe {
-        TRITONBACKEND_RequestInputName(self._request, index, &mut name) };
+        let err = unsafe { TRITONBACKEND_RequestInputName(self._request, index, &mut name) };
         return if err.is_null() {
-            let name = unsafe {CStr::from_ptr(name).to_str().unwrap_or("")};
+            let name = unsafe { CStr::from_ptr(name).to_str().unwrap_or("") };
             Ok(name)
         } else {
-            Err(TritonError {_error: err})
+            Err(TritonError { _err: err })
         };
     }
+
     pub fn get_output_name(&self, index: u32) -> Result<&str, TritonError> {
-        /* TRITONBACKEND_RequestInputName(
-    struct TRITONBACKEND_Request* request, const uint32_t index,
-    const char** input_name); */
         let name = CString::new("").unwrap();
         let mut name = name.as_ptr();
-        let err = unsafe {
-        TRITONBACKEND_RequestOutputName(self._request, index, &mut name) };
+        let err = unsafe { TRITONBACKEND_RequestOutputName(self._request, index, &mut name) };
         return if err.is_null() {
-            let name = unsafe {CStr::from_ptr(name).to_str().unwrap_or("")};
+            let name = unsafe { CStr::from_ptr(name).to_str().unwrap_or("") };
             Ok(name)
         } else {
-            Err(TritonError {_error: err})
+            Err(TritonError { _err: err })
         };
     }
     pub fn get_id(&self) -> Result<&str, TritonError> {
@@ -285,18 +290,18 @@ impl Request {
             let id = unsafe { CStr::from_ptr(id).to_str().unwrap_or("") };
             Ok(id)
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
         };
     }
 
     pub fn get_correlation_id(&self) -> Result<u64, TritonError> {
         let mut id = 0;
-        let err = unsafe {TRITONBACKEND_RequestCorrelationId(self._request, &mut id)};
+        let err = unsafe { TRITONBACKEND_RequestCorrelationId(self._request, &mut id) };
         return if err.is_null() {
             Ok(id)
         } else {
-            Err(TritonError{_error: err})
-        }
+            Err(TritonError { _err: err })
+        };
     }
     pub fn get_correlation_id_string(&self) -> Result<&str, TritonError> {
         let id = CString::new("").unwrap();
@@ -306,18 +311,48 @@ impl Request {
             let id = unsafe { CStr::from_ptr(id).to_str().unwrap_or("") };
             Ok(id)
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
         };
     }
 
     pub fn get_flags(&self) -> Result<u32, TritonError> {
         let mut id = 0;
-        let err = unsafe {TRITONBACKEND_RequestFlags(self._request, &mut id)};
+        let err = unsafe { TRITONBACKEND_RequestFlags(self._request, &mut id) };
         return if err.is_null() {
             Ok(id)
         } else {
-            Err(TritonError{_error: err})
-        }
+            Err(TritonError { _err: err })
+        };
+    }
+    pub fn get_output_buffer_properties(
+        &self,
+        name: Option<&str>,
+        byte_size: Option<&mut usize>,
+        memory_type: &mut TRITONSERVER_MemoryType,
+        memory_type_id: &mut i64,
+    ) -> Result<(), TritonError> {
+        let name = match name {
+            Some(str) => CString::new(str).unwrap().as_ptr(),
+            None => std::ptr::null() as *const i8,
+        };
+        let byte_size = match byte_size {
+            Some(size) => size,
+            None => std::ptr::null_mut() as *mut usize,
+        };
+        let err = unsafe {
+            TRITONBACKEND_RequestOutputBufferProperties(
+                self._request,
+                name,
+                byte_size,
+                memory_type,
+                memory_type_id,
+            )
+        };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
     }
 }
 
@@ -329,21 +364,59 @@ pub struct Output {
     _output: *mut TRITONBACKEND_Output,
 }
 
-impl Response {
+impl ResponseFactory {
     pub fn new(request: Request) -> Result<Self, TritonError> {
+        let mut factory: *mut TRITONBACKEND_ResponseFactory =
+            std::ptr::null_mut() as *mut TRITONBACKEND_ResponseFactory;
+        let err = unsafe { TRITONBACKEND_ResponseFactoryNew(&mut factory, request._request) };
+        return if err.is_null() {
+            Ok(ResponseFactory { _factory: factory })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn send_flags(&self, flags: u32) -> Result<(), TritonError> {
+        let err = unsafe { TRITONBACKEND_ResponseFactorySendFlags(self._factory, flags) };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+}
+
+impl Drop for ResponseFactory {
+    fn drop(&mut self) {
+        let err = unsafe { TRITONBACKEND_ResponseFactoryDelete(self._factory) };
+        if !err.is_null() {
+            //TODO: add log maybe
+        }
+    }
+}
+impl Response {
+    pub fn new(request: &Request) -> Result<Self, TritonError> {
         let mut response: *mut TRITONBACKEND_Response =
             std::ptr::null_mut() as *mut TRITONBACKEND_Response;
-        let mut error: *mut TRITONSERVER_Error = std::ptr::null_mut() as *mut TRITONSERVER_Error;
-        unsafe {
-            let request: *mut TRITONBACKEND_Request = request._request;
-            error = TRITONBACKEND_ResponseNew(&mut response, request);
-        }
-        return if error.is_null() {
+        let err = unsafe { TRITONBACKEND_ResponseNew(&mut response, request._request) };
+        return if err.is_null() {
             Ok(Response {
                 _response: response,
             })
         } else {
-            Err(TritonError { _error: error })
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn from_factor(factory: &ResponseFactory) -> Result<Self, TritonError> {
+        let mut response = std::ptr::null_mut() as *mut TRITONBACKEND_Response;
+        let err = unsafe { TRITONBACKEND_ResponseNewFromFactory(&mut response, factory._factory) };
+        return if err.is_null() {
+            Ok(Response {
+                _response: response,
+            })
+        } else {
+            Err(TritonError { _err: err })
         };
     }
 
@@ -372,21 +445,65 @@ impl Response {
         return if err.is_null() {
             Ok(Output { _output: output })
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
         };
     }
-    pub fn send(&self, complete_flag: TRITONSERVER_ResponseCompleteFlag, err: Option<TritonError>) {
-        unsafe {
+    pub fn send(
+        &self,
+        complete_flag: TRITONSERVER_ResponseCompleteFlag,
+        err: Option<TritonError>,
+    ) -> Result<(), TritonError> {
+        let err = unsafe {
             // notes for safe wrap: TRITONBACKEND_ResponseSend  takes ownership of response;
             TRITONBACKEND_ResponseSend(
                 self._response,
                 complete_flag,
                 match err {
-                    Some(e) => e._error,
+                    Some(e) => e._err,
                     None => std::ptr::null_mut() as *mut TRITONSERVER_Error,
                 },
-            );
-        }
+            )
+        };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn set_string_parameter(&self, name: &str, value: &str) -> Result<(), TritonError> {
+        let name = CString::new(name).unwrap();
+        let value = CString::new(value).unwrap();
+        let err = unsafe {
+            TRITONBACKEND_ResponseSetStringParameter(self._response, name.as_ptr(), value.as_ptr())
+        };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn set_int_parameter(&self, name: &str, value: i64) -> Result<(), TritonError> {
+        let name = CString::new(name).unwrap();
+        let err =
+            unsafe { TRITONBACKEND_ResponseSetIntParameter(self._response, name.as_ptr(), value) };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn set_bool_parameter(&self, name: &str, value: bool) -> Result<(), TritonError> {
+        let name = CString::new(name).unwrap();
+        let err =
+            unsafe { TRITONBACKEND_ResponseSetBoolParameter(self._response, name.as_ptr(), value) };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
     }
 }
 impl Output {
@@ -398,10 +515,9 @@ impl Output {
         datatype: TRITONSERVER_DataType,
     ) -> Result<OutputBuffer, TritonError> {
         let mut buffer: *mut std::ffi::c_void = std::ptr::null_mut() as *mut std::ffi::c_void;
-        let mut err: *mut TRITONSERVER_Error = std::ptr::null_mut() as *mut TRITONSERVER_Error;
         let mut memory_type = memory_type;
         let mut memory_type_id = memory_type_id;
-        err = unsafe {
+        let err = unsafe {
             TRITONBACKEND_OutputBuffer(
                 self._output,
                 &mut buffer,
@@ -419,13 +535,24 @@ impl Output {
                 datatype,
             })
         } else {
-            Err(TritonError { _error: err })
+            Err(TritonError { _err: err })
         };
+    }
+}
+
+impl Drop for Response {
+    fn drop(&mut self) {
+        let err = unsafe { TRITONBACKEND_ResponseDelete(self._response) };
+        if !err.is_null() {
+            //TODO: add logging
+        }
     }
 }
 impl Drop for Request {
     fn drop(&mut self) {
         let _err = unsafe {
+            /* according to tritonbackend.h, there might be a benefit to release a re
+            quest as early as possible to release all it's resources */
             TRITONBACKEND_RequestRelease(
                 self._request,
                 tritonserver_requestreleaseflag_enum_TRITONSERVER_REQUEST_RELEASE_ALL,
@@ -438,7 +565,7 @@ impl Drop for Request {
 
 /*
 
-TRITONBACKEND_DECLSPEC struct TRITONSERVER_Error* TRITONBACKEND_ApiVersion(
+TRITONBACKEND_DECLSPEC struct TRITONSERVER_err* TRITONBACKEND_ApiVersion(
     uint32_t* major, uint32_t* minor); */
 pub struct TritonApiVersion {
     major: u32,
@@ -451,8 +578,142 @@ pub fn get_backend_api_version() -> Result<TritonApiVersion, TritonError> {
     return if err.is_null() {
         Ok(TritonApiVersion { major, minor })
     } else {
-        Err(TritonError { _error: err })
+        Err(TritonError { _err: err })
     };
 }
 
+pub struct InstanceState {}
+pub struct ModelInstance {
+    _instance: *mut TRITONBACKEND_ModelInstance,
+}
+
+impl ModelInstance {
+    pub fn report_statistics(
+        &self,
+        request: &Request,
+        success: bool,
+        exec_start_ns: u64,
+        compute_start_ns: u64,
+        compute_end_ns: u64,
+        exec_end_ns: u64,
+    ) -> Result<(), TritonError> {
+        let err = unsafe {
+            TRITONBACKEND_ModelInstanceReportStatistics(
+                self._instance,
+                request._request,
+                success,
+                exec_start_ns,
+                compute_start_ns,
+                compute_end_ns,
+                exec_end_ns,
+            )
+        };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+    pub fn report_batch_statistics(
+        &self,
+        batch_size: u64,
+        exec_start_ns: u64,
+        compute_start_ns: u64,
+        compute_end_ns: u64,
+        exec_end_ns: u64,
+    ) -> Result<(), TritonError> {
+        let err = unsafe {
+            TRITONBACKEND_ModelInstanceReportBatchStatistics(
+                self._instance,
+                batch_size,
+                exec_start_ns,
+                compute_start_ns,
+                compute_end_ns,
+                exec_end_ns,
+            )
+        };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+    pub fn get_state(&self) -> Result<&InstanceState, TritonError> {
+        let mut state = std::ptr::null_mut() as *mut std::os::raw::c_void;
+        let err = unsafe { TRITONBACKEND_ModelInstanceState(self._instance, &mut state) };
+        return if err.is_null() {
+            let state = state as *mut InstanceState;
+            Ok(&*state)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn set_state(&self, state: &mut InstanceState) -> Result<(), TritonError> {
+        let state = state as *mut InstanceState;
+        let err = unsafe {
+            TRITONBACKEND_ModelInstanceSetState(self._instance, state as *mut std::os::raw::c_void)
+        };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_model(&self) -> Result<Model, TritonError> {
+        let mut model = std::ptr::null_mut() as *mut TRITONBACKEND_Model;
+        let err = unsafe { TRITONBACKEND_ModelInstanceModel(self._instance, &mut model) };
+        return if err.is_null() {
+            Ok(Model { _model: model })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_secondary_device_properties(
+        &self,
+        index: u32,
+    ) -> Result<DeviceProperty, TritonError> {
+        let mut kind = CString::new("").unwrap();
+        let mut kind = kind.as_ptr();
+        let mut id = 0;
+        let err = unsafe {
+            TRITONBACKEND_ModelInstanceSecondaryDeviceProperties(
+                self._instance,
+                index,
+                &mut kind,
+                &mut id,
+            )
+        };
+        return if err.is_null() {
+            Ok(DeviceProperty {
+                kind: unsafe { CStr::from_ptr(kind).to_str().unwrap_or("") },
+                id,
+            })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_secondary_device_count(&self) -> Result<u32, TritonError> {
+        let mut count = 0;
+        let err =
+            unsafe { TRITONBACKEND_ModelInstanceSecondaryDeviceCount(self._instance, &mut count) };
+        return if err.is_null() {
+            Ok(count)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+}
+
+pub struct Model {
+    _model: *mut TRITONBACKEND_Model,
+}
+
+pub struct DeviceProperty<'a> {
+    kind: &'a str,
+    id: i64,
+}
 // TODO: memory manager
