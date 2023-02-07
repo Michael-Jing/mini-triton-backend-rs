@@ -1,23 +1,33 @@
-Minimal Nvidia Triton Inference Server Backend written in rust, work in progress
+Minimal Nvidia [Triton Inference Server](https://github.com/triton-inference-server) Backend written in rust, work in progress
 # Get Started
 
 1. build images and start docker
-	`docker compose up -d`
+```
+	docker compose up -d
+```
 
-2. go inside docker and start triton server
+2. go inside docker
 ```
 	docker exec -it <container name> /bin/bash
 	
 ```
 
-then inside docker
-3. cargo build
+3. build the project
+```
+	cargo build
+```
 
-4. cp target/debug/libtriton_minimal.so /opt/tritonserver/backends/minimal/
 
-5.
-`
+4. copy .so file to triton backend folder
+```
+	cp target/debug/libtriton_minimal.so /opt/tritonserver/backends/minimal/
+```
+
+5. start triton server
+```
 	tritonserver --model-repository=/models
-`
-6. from host machine, run minimal_client https://github.com/triton-inference-server/backend/blob/main/examples/clients/minimal_client
-
+```
+6. from host machine, run minimal_client 
+```
+	python clients/minimal_client
+```

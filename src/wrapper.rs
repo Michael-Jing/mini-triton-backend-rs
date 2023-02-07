@@ -643,7 +643,7 @@ impl ModelInstance {
         let err = unsafe { TRITONBACKEND_ModelInstanceState(self._instance, &mut state) };
         return if err.is_null() {
             let state = state as *mut InstanceState;
-            Ok(&*state)
+            Ok(unsafe { &*state })
         } else {
             Err(TritonError { _err: err })
         };
@@ -716,4 +716,150 @@ pub struct DeviceProperty<'a> {
     kind: &'a str,
     id: i64,
 }
-// TODO: memory manager
+
+pub struct TritonMessage {
+    _message: *mut TRITONSERVER_Message,
+}
+pub struct Backend {
+    _backend: *mut TRITONBACKEND_Backend,
+}
+
+impl Backend {
+    pub fn get_name(&self) -> Result<&str, TritonError> {
+        let mut name = CString::new("").unwrap();
+        let mut name = name.as_ptr();
+        let err = unsafe { TRITONBACKEND_BackendName(self._backend, &mut name) };
+        return if err.is_null() {
+            Ok(unsafe { CStr::from_ptr(name).to_str().unwrap_or("") })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_config(&self) -> Result<TritonMessage, TritonError> {
+        let mut config = std::ptr::null_mut() as *mut TRITONSERVER_Message;
+        let err = unsafe { TRITONBACKEND_BackendConfig(self._backend, &mut config) };
+        return if err.is_null() {
+            Ok(TritonMessage { _message: config })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_execution_policy(&self) -> Result<TRITONBACKEND_ExecutionPolicy, TritonError> {
+        let mut policy = TRITONBACKEND_execpolicy_enum_TRITONBACKEND_EXECUTION_BLOCKING;
+        let err = unsafe { TRITONBACKEND_BackendExecutionPolicy(self._backend, &mut policy) };
+        return if err.is_null() {
+            Ok(policy)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn set_execution_policy(
+        &self,
+        policy: TRITONBACKEND_ExecutionPolicy,
+    ) -> Result<(), TritonError> {
+        let err = unsafe { TRITONBACKEND_BackendSetExecutionPolicy(self._backend, policy) };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_artifacts(&self) -> Result<(TRITONBACKEND_ArtifactType, &str), TritonError> {
+        let mut artifact_type = TRITONBACKEND_artifacttype_enum_TRITONBACKEND_ARTIFACT_FILESYSTEM;
+        let mut location = CString::new("").unwrap();
+        let mut location = location.as_ptr();
+        let err = unsafe {
+            TRITONBACKEND_BackendArtifacts(self._backend, &mut artifact_type, &mut location)
+        };
+        return if err.is_null() {
+            Ok((artifact_type, unsafe {
+                CStr::from_ptr(location).to_str().unwrap_or("")
+            }))
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_state(&self) -> Result<&BackendState, TritonError> {
+        let mut state = std::ptr::null_mut() as *mut std::os::raw::c_void;
+        let err = unsafe { TRITONBACKEND_BackendState(self._backend, &mut state) };
+        return if err.is_null() {
+            let state = state as *mut BackendState;
+            Ok(unsafe { &*state })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn set_state(&self, state: &BackendState) -> Result<(), TritonError> {
+        let state = state as *const BackendState;
+        let err =
+            unsafe { TRITONBACKEND_BackendSetState(self._backend, state as *mut ffi::c_void) };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+}
+
+pub struct MemoryManager {
+    _manager: *mut TRITONBACKEND_MemoryManager,
+}
+
+impl MemoryManager {
+    pub fn new(backend: &Backend) -> Result<Self, TritonError> {
+        let mut manager = std::ptr::null_mut() as *mut TRITONBACKEND_MemoryManager;
+        let err = unsafe { TRITONBACKEND_BackendMemoryManager(backend._backend, &mut manager) };
+        return if err.is_null() {
+            Ok(MemoryManager { _manager: manager })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+}
+
+pub struct BackendState {}
+
+impl Model {
+    pub fn get_name(&self) -> Result<&str, TritonError> {
+        let name = CString::new("").unwrap();
+        let mut name = name.as_ptr();
+        let err = unsafe { TRITONBACKEND_ModelName(self._model, &mut name) };
+        return if err.is_null() {
+            Ok(unsafe { CStr::from_ptr(name).to_str().unwrap_or("") })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_version(&self) -> Result<u64, TritonError> {
+        let mut version = 0;
+        let err = unsafe { TRITONBACKEND_ModelVersion(self._model, &mut version) };
+        return if err.is_null() {
+            Ok(version)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_artifacts(&self) -> Result<(TRITONBACKEND_ArtifactType, &str), TritonError> {
+        let mut artifact_type = TRITONBACKEND_artifacttype_enum_TRITONBACKEND_ARTIFACT_FILESYSTEM;
+        let mut location = CString::new("").unwrap();
+        let mut location = location.as_ptr();
+        let err = unsafe {
+            TRITONBACKEND_ModelRepository(self._model, &mut artifact_type, &mut location)
+        };
+        return if err.is_null() {
+            Ok((artifact_type, unsafe {
+                CStr::from_ptr(location).to_str().unwrap_or("")
+            }))
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+}

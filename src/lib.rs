@@ -70,7 +70,7 @@ mod triton {
                         }
                     }
 
-                    let response = Response::new(request).unwrap();
+                    let response = Response::new(&request).unwrap();
                     let output = response
                         .get_output(
                             "OUT0".to_owned(),
