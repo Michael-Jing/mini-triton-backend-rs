@@ -706,6 +706,79 @@ impl ModelInstance {
             Err(TritonError { _err: err })
         };
     }
+
+    pub fn get_profile_count(&self) -> Result<u32, TritonError> {
+        let mut count = 0;
+        let err = unsafe { TRITONBACKEND_ModelInstanceProfileCount(self._instance, &mut count) };
+        return if err.is_null() {
+            Ok(count)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_profile_name(&self, index: u32) -> Result<&str, TritonError> {
+        let mut name = CString::new("").unwrap();
+        let mut name = name.as_ptr();
+        let err =
+            unsafe { TRITONBACKEND_ModelInstanceProfileName(self._instance, index, &mut name) };
+        return if err.is_null() {
+            Ok(unsafe { CStr::from_ptr(name).to_str().unwrap_or("") })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn is_passive(&self) -> Result<bool, TritonError> {
+        let mut passive = false;
+        let err = unsafe { TRITONBACKEND_ModelInstanceIsPassive(self._instance, &mut passive) };
+        return if err.is_null() {
+            Ok(passive)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_host_policy(&self) -> Result<TritonMessage, TritonError> {
+        let mut policy = std::ptr::null_mut() as *mut TRITONSERVER_Message;
+        let err = unsafe { TRITONBACKEND_ModelInstanceHostPolicy(self._instance, &mut policy) };
+        return if err.is_null() {
+            Ok(TritonMessage { _message: policy })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_device_id(&self) -> Result<i32, TritonError> {
+        let mut id = 0;
+        let err = unsafe { TRITONBACKEND_ModelInstanceDeviceId(self._instance, &mut id) };
+        return if err.is_null() {
+            Ok(id)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_kind(&self) -> Result<TRITONSERVER_InstanceGroupKind, TritonError> {
+        let mut kind = TRITONSERVER_instancegroupkind_enum_TRITONSERVER_INSTANCEGROUPKIND_AUTO;
+        let err = unsafe { TRITONBACKEND_ModelInstanceKind(self._instance, &mut kind) };
+        return if err.is_null() {
+            Ok(kind)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_name(&self) -> Result<&str, TritonError> {
+        let mut name = CString::new("").unwrap();
+        let mut name = name.as_ptr();
+        let err = unsafe { TRITONBACKEND_ModelInstanceName(self._instance, &mut name) };
+        return if err.is_null() {
+            Ok(unsafe { CStr::from_ptr(name).to_str().unwrap_or("") })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
 }
 
 pub struct Model {
@@ -722,6 +795,10 @@ pub struct TritonMessage {
 }
 pub struct Backend {
     _backend: *mut TRITONBACKEND_Backend,
+}
+
+pub struct Server {
+    _server: *mut TRITONSERVER_Server,
 }
 
 impl Backend {
@@ -824,6 +901,7 @@ impl MemoryManager {
 }
 
 pub struct BackendState {}
+pub struct ModelState {}
 
 impl Model {
     pub fn get_name(&self) -> Result<&str, TritonError> {
@@ -858,6 +936,82 @@ impl Model {
             Ok((artifact_type, unsafe {
                 CStr::from_ptr(location).to_str().unwrap_or("")
             }))
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_config(&self, config_version: u32) -> Result<TritonMessage, TritonError> {
+        let mut config = std::ptr::null_mut() as *mut TRITONSERVER_Message;
+        let err = unsafe { TRITONBACKEND_ModelConfig(self._model, config_version, &mut config) };
+        return if err.is_null() {
+            Ok(TritonMessage { _message: config })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn should_auto_complete_config(&self) -> Result<bool, TritonError> {
+        let mut auto_complete = false;
+        let err = unsafe { TRITONBACKEND_ModelAutoCompleteConfig(self._model, &mut auto_complete) };
+        return if err.is_null() {
+            Ok(auto_complete)
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn set_config(
+        &self,
+        config_version: u32,
+        config: TritonMessage,
+    ) -> Result<(), TritonError> {
+        let err =
+            unsafe { TRITONBACKEND_ModelSetConfig(self._model, config_version, config._message) };
+        return if err.is_null() {
+            Ok(())
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_server(&self) -> Result<Server, TritonError> {
+        let mut server = std::ptr::null_mut() as *mut TRITONSERVER_Server;
+        let err = unsafe { TRITONBACKEND_ModelServer(self._model, &mut server) };
+        return if err.is_null() {
+            Ok(Server { _server: server })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_backend(&self) -> Result<Backend, TritonError> {
+        let mut backend = std::ptr::null_mut() as *mut TRITONBACKEND_Backend;
+        let err = unsafe { TRITONBACKEND_ModelBackend(self._model, &mut backend) };
+        return if err.is_null() {
+            Ok(Backend { _backend: backend })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn get_state(&self) -> Result<&ModelState, TritonError> {
+        let mut state = std::ptr::null_mut() as *mut std::os::raw::c_void;
+        let err = unsafe { TRITONBACKEND_ModelState(self._model, &mut state) };
+        return if err.is_null() {
+            let state = state as *mut ModelState;
+            Ok(unsafe { &*state })
+        } else {
+            Err(TritonError { _err: err })
+        };
+    }
+
+    pub fn set_state(&self, state: &mut ModelState) -> Result<(), TritonError> {
+        let state = state as *mut ModelState;
+        let err =
+            unsafe { TRITONBACKEND_ModelSetState(self._model, state as *mut std::os::raw::c_void) };
+        return if err.is_null() {
+            Ok(())
         } else {
             Err(TritonError { _err: err })
         };
