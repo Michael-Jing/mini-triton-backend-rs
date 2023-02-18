@@ -1261,211 +1261,211 @@ TRITONBACKEND_ModelInstanceReportBatchStatistics(
 
 /*********************************************************************/
 /*********************************************************************/
-///
-/// The following functions can be implemented by a backend. Functions
-/// indicated as required must be implemented or the backend will fail
-/// to load.
-///
+// ///
+// /// The following functions can be implemented by a backend. Functions
+// /// indicated as required must be implemented or the backend will fail
+// /// to load.
+// ///
 
-/// Initialize a backend. This function is optional, a backend is not
-/// required to implement it. This function is called once when a
-/// backend is loaded to allow the backend to initialize any state
-/// associated with the backend. A backend has a single state that is
-/// shared across all models that use the backend.
-///
-/// \param backend The backend.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_Initialize(
-    struct TRITONBACKEND_Backend* backend);
+// /// Initialize a backend. This function is optional, a backend is not
+// /// required to implement it. This function is called once when a
+// /// backend is loaded to allow the backend to initialize any state
+// /// associated with the backend. A backend has a single state that is
+// /// shared across all models that use the backend.
+// ///
+// /// \param backend The backend.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_Initialize(
+//     struct TRITONBACKEND_Backend* backend);
 
-/// Finalize for a backend. This function is optional, a backend is
-/// not required to implement it. This function is called once, just
-/// before the backend is unloaded. All state associated with the
-/// backend should be freed and any threads created for the backend
-/// should be exited/joined before returning from this function.
-///
-/// \param backend The backend.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_Finalize(
-    struct TRITONBACKEND_Backend* backend);
+// /// Finalize for a backend. This function is optional, a backend is
+// /// not required to implement it. This function is called once, just
+// /// before the backend is unloaded. All state associated with the
+// /// backend should be freed and any threads created for the backend
+// /// should be exited/joined before returning from this function.
+// ///
+// /// \param backend The backend.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_Finalize(
+//     struct TRITONBACKEND_Backend* backend);
 
-/// Initialize for a model. This function is optional, a backend is
-/// not required to implement it. This function is called once when a
-/// model that uses the backend is loaded to allow the backend to
-/// initialize any state associated with the model. The backend should
-/// also examine the model configuration to determine if the
-/// configuration is suitable for the backend. Any errors reported by
-/// this function will prevent the model from loading.
-///
-/// \param model The model.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelInitialize(
-    struct TRITONBACKEND_Model* model);
+// /// Initialize for a model. This function is optional, a backend is
+// /// not required to implement it. This function is called once when a
+// /// model that uses the backend is loaded to allow the backend to
+// /// initialize any state associated with the model. The backend should
+// /// also examine the model configuration to determine if the
+// /// configuration is suitable for the backend. Any errors reported by
+// /// this function will prevent the model from loading.
+// ///
+// /// \param model The model.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelInitialize(
+//     struct TRITONBACKEND_Model* model);
 
-/// Finalize for a model. This function is optional, a backend is not
-/// required to implement it. This function is called once for a
-/// model, just before the model is unloaded from Triton. All state
-/// associated with the model should be freed and any threads created
-/// for the model should be exited/joined before returning from this
-/// function.
-///
-/// \param model The model.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelFinalize(
-    struct TRITONBACKEND_Model* model);
+// /// Finalize for a model. This function is optional, a backend is not
+// /// required to implement it. This function is called once for a
+// /// model, just before the model is unloaded from Triton. All state
+// /// associated with the model should be freed and any threads created
+// /// for the model should be exited/joined before returning from this
+// /// function.
+// ///
+// /// \param model The model.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelFinalize(
+//     struct TRITONBACKEND_Model* model);
 
-/// Initialize for a model instance. This function is optional, a
-/// backend is not required to implement it. This function is called
-/// once when a model instance is created to allow the backend to
-/// initialize any state associated with the instance.
-///
-/// \param instance The model instance.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelInstanceInitialize(
-    struct TRITONBACKEND_ModelInstance* instance);
+// /// Initialize for a model instance. This function is optional, a
+// /// backend is not required to implement it. This function is called
+// /// once when a model instance is created to allow the backend to
+// /// initialize any state associated with the instance.
+// ///
+// /// \param instance The model instance.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelInstanceInitialize(
+//     struct TRITONBACKEND_ModelInstance* instance);
 
-/// Finalize for a model instance. This function is optional, a
-/// backend is not required to implement it. This function is called
-/// once for an instance, just before the corresponding model is
-/// unloaded from Triton. All state associated with the instance
-/// should be freed and any threads created for the instance should be
-/// exited/joined before returning from this function.
-///
-/// \param instance The model instance.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelInstanceFinalize(
-    struct TRITONBACKEND_ModelInstance* instance);
+// /// Finalize for a model instance. This function is optional, a
+// /// backend is not required to implement it. This function is called
+// /// once for an instance, just before the corresponding model is
+// /// unloaded from Triton. All state associated with the instance
+// /// should be freed and any threads created for the instance should be
+// /// exited/joined before returning from this function.
+// ///
+// /// \param instance The model instance.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelInstanceFinalize(
+//     struct TRITONBACKEND_ModelInstance* instance);
 
-/// Execute a batch of one or more requests on a model instance. This
-/// function is required. Triton will not perform multiple
-/// simultaneous calls to this function for a given model 'instance';
-/// however, there may be simultaneous calls for different model
-/// instances (for the same or different models).
-///
-/// If an error is returned the ownership of the request objects
-/// remains with Triton and the backend must not retain references to
-/// the request objects or access them in any way.
-///
-/// If success is returned, ownership of the request objects is
-/// transferred to the backend and it is then responsible for creating
-/// responses and releasing the request objects. Note that even though
-/// ownership of the request objects is transferred to the backend, the
-/// ownership of the buffer holding request pointers is returned back
-/// to Triton upon return from TRITONBACKEND_ModelInstanceExecute. If
-/// any request objects need to be maintained beyond
-/// TRITONBACKEND_ModelInstanceExecute, then the pointers must be copied
-/// out of the array within TRITONBACKEND_ModelInstanceExecute.
-///
-/// \param instance The model instance.
-/// \param requests The requests.
-/// \param request_count The number of requests in the batch.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelInstanceExecute_wip(
-    struct TRITONBACKEND_ModelInstance* instance, struct TRITONBACKEND_Request** requests,
-    const uint32_t request_count);
+// /// Execute a batch of one or more requests on a model instance. This
+// /// function is required. Triton will not perform multiple
+// /// simultaneous calls to this function for a given model 'instance';
+// /// however, there may be simultaneous calls for different model
+// /// instances (for the same or different models).
+// ///
+// /// If an error is returned the ownership of the request objects
+// /// remains with Triton and the backend must not retain references to
+// /// the request objects or access them in any way.
+// ///
+// /// If success is returned, ownership of the request objects is
+// /// transferred to the backend and it is then responsible for creating
+// /// responses and releasing the request objects. Note that even though
+// /// ownership of the request objects is transferred to the backend, the
+// /// ownership of the buffer holding request pointers is returned back
+// /// to Triton upon return from TRITONBACKEND_ModelInstanceExecute. If
+// /// any request objects need to be maintained beyond
+// /// TRITONBACKEND_ModelInstanceExecute, then the pointers must be copied
+// /// out of the array within TRITONBACKEND_ModelInstanceExecute.
+// ///
+// /// \param instance The model instance.
+// /// \param requests The requests.
+// /// \param request_count The number of requests in the batch.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelInstanceExecute_wip(
+//     struct TRITONBACKEND_ModelInstance* instance, struct TRITONBACKEND_Request** requests,
+//     const uint32_t request_count);
 
-/// Query the backend for different model attributes. This function is optional,
-/// a backend is not required to implement it. The backend is also not required
-/// to set all backend attribute listed. This function is called when
-/// Triton requires further backend / model information to perform operations.
-/// This function may be called multiple times within the lifetime of the
-/// backend (between TRITONBACKEND_Initialize and TRITONBACKEND_Finalize).
-/// The backend may return error to indicate failure to set the backend
-/// attributes, and the attributes specified in the same function call will be
-/// ignored. Triton will update the specified attributes if 'nullptr' is
-/// returned.
-///
-/// \param backend The backend.
-/// \param backend_attributes Return the backend attribute.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_GetBackendAttribute(
-    struct TRITONBACKEND_Backend* backend,
-    struct TRITONBACKEND_BackendAttribute* backend_attributes);
+// /// Query the backend for different model attributes. This function is optional,
+// /// a backend is not required to implement it. The backend is also not required
+// /// to set all backend attribute listed. This function is called when
+// /// Triton requires further backend / model information to perform operations.
+// /// This function may be called multiple times within the lifetime of the
+// /// backend (between TRITONBACKEND_Initialize and TRITONBACKEND_Finalize).
+// /// The backend may return error to indicate failure to set the backend
+// /// attributes, and the attributes specified in the same function call will be
+// /// ignored. Triton will update the specified attributes if 'nullptr' is
+// /// returned.
+// ///
+// /// \param backend The backend.
+// /// \param backend_attributes Return the backend attribute.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_GetBackendAttribute(
+//     struct TRITONBACKEND_Backend* backend,
+//     struct TRITONBACKEND_BackendAttribute* backend_attributes);
 
-/// TRITONBACKEND_BackendAttribute
-///
-/// API to modify attributes associated with a backend.
-///
+// /// TRITONBACKEND_BackendAttribute
+// ///
+// /// API to modify attributes associated with a backend.
+// ///
 
-/// Add the preferred instance group of the backend. This function
-/// can be called multiple times to cover different instance group kinds that
-/// the backend supports, given the priority order that the first call describes
-/// the most preferred group. In the case where instance group are not
-/// explicitly provided, Triton will use this attribute to create model
-/// deployment that aligns more with the backend preference.
-///
-/// \param backend_attributes The backend attributes object.
-/// \param kind The kind of the instance group.
-/// \param count The number of instances per device. Triton default will be used
-/// if 0 is provided.
-/// \param device_ids The devices where instances should be available. Triton
-/// default will be used if 'nullptr' is provided.
-/// \param id_count The number of devices in 'device_ids'.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONSERVER_DECLSPEC struct TRITONSERVER_Error*
-TRITONBACKEND_BackendAttributeAddPreferredInstanceGroup(
-    struct TRITONBACKEND_BackendAttribute* backend_attributes,
-    const TRITONSERVER_InstanceGroupKind kind, const uint64_t count,
-    const uint64_t* device_ids, const uint64_t id_count);
+// /// Add the preferred instance group of the backend. This function
+// /// can be called multiple times to cover different instance group kinds that
+// /// the backend supports, given the priority order that the first call describes
+// /// the most preferred group. In the case where instance group are not
+// /// explicitly provided, Triton will use this attribute to create model
+// /// deployment that aligns more with the backend preference.
+// ///
+// /// \param backend_attributes The backend attributes object.
+// /// \param kind The kind of the instance group.
+// /// \param count The number of instances per device. Triton default will be used
+// /// if 0 is provided.
+// /// \param device_ids The devices where instances should be available. Triton
+// /// default will be used if 'nullptr' is provided.
+// /// \param id_count The number of devices in 'device_ids'.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONSERVER_DECLSPEC struct TRITONSERVER_Error*
+// TRITONBACKEND_BackendAttributeAddPreferredInstanceGroup(
+//     struct TRITONBACKEND_BackendAttribute* backend_attributes,
+//     const TRITONSERVER_InstanceGroupKind kind, const uint64_t count,
+//     const uint64_t* device_ids, const uint64_t id_count);
 
-/// TRITONBACKEND Batching
-///
-/// API to add custom batching strategy
-///
-/// The following functions can be implemented by a backend to add custom
-/// batching conditionals on top of the existing Triton batching strategy. The
-/// functions are optional but all or none must be implemented.
-///
+// /// TRITONBACKEND Batching
+// ///
+// /// API to add custom batching strategy
+// ///
+// /// The following functions can be implemented by a backend to add custom
+// /// batching conditionals on top of the existing Triton batching strategy. The
+// /// functions are optional but all or none must be implemented.
+// ///
 
-/// Create a new batcher for use with custom batching. This is called during
-/// model loading. The batcher will point to a user-defined data structure that
-/// holds read-only data used for custom batching.
-///
-/// \param batcher User-defined placeholder for backend to store and
-/// retrieve information about the batching strategy for this
-/// model.RITONBACKEND_ISPEC return a TRITONSERVER_Error indicating success or
-/// failure. \param model The backend model for which Triton is forming a batch.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatcherInitialize(
-    struct TRITONBACKEND_Batcher** batcher, struct TRITONBACKEND_Model* model);
+// /// Create a new batcher for use with custom batching. This is called during
+// /// model loading. The batcher will point to a user-defined data structure that
+// /// holds read-only data used for custom batching.
+// ///
+// /// \param batcher User-defined placeholder for backend to store and
+// /// retrieve information about the batching strategy for this
+// /// model.RITONBACKEND_ISPEC return a TRITONSERVER_Error indicating success or
+// /// failure. \param model The backend model for which Triton is forming a batch.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatcherInitialize(
+//     struct TRITONBACKEND_Batcher** batcher, struct TRITONBACKEND_Model* model);
 
-/// Free memory associated with batcher. This is called during model unloading.
-///
-/// \param batcher User-defined placeholder for backend to store and
-/// retrieve information about the batching strategy for this model.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatcherFinalize(
-    struct TRITONBACKEND_Batcher* batcher);
+// /// Free memory associated with batcher. This is called during model unloading.
+// ///
+// /// \param batcher User-defined placeholder for backend to store and
+// /// retrieve information about the batching strategy for this model.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatcherFinalize(
+//     struct TRITONBACKEND_Batcher* batcher);
 
-/// Check whether a request should be added to the pending model batch.
-///
-/// \param request The request to be added to the pending batch.
-/// \param userp The placeholder for backend to store and retrieve information
-/// about this pending batch. When the callback returns, this should reflect
-/// the latest batch information.
-/// \param should_include The pointer to be updated on whether the request
-/// should be included in the batch.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatchIncludeRequest(
-    struct TRITONBACKEND_Request* request, void* userp, bool* should_include);
+// /// Check whether a request should be added to the pending model batch.
+// ///
+// /// \param request The request to be added to the pending batch.
+// /// \param userp The placeholder for backend to store and retrieve information
+// /// about this pending batch. When the callback returns, this should reflect
+// /// the latest batch information.
+// /// \param should_include The pointer to be updated on whether the request
+// /// should be included in the batch.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatchIncludeRequest(
+//     struct TRITONBACKEND_Request* request, void* userp, bool* should_include);
 
-/// Callback to be invoked when Triton has begun forming a batch.
-///
-/// \param batcher The read-only placeholder for backend to retrieve
-// information about the batching strategy for this model.
-/// \param userp The placeholder for backend to store and retrieve information
-/// about this pending batch.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatchInitialize(
-    const struct TRITONBACKEND_Batcher* batcher, void** userp);
+// /// Callback to be invoked when Triton has begun forming a batch.
+// ///
+// /// \param batcher The read-only placeholder for backend to retrieve
+// // information about the batching strategy for this model.
+// /// \param userp The placeholder for backend to store and retrieve information
+// /// about this pending batch.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatchInitialize(
+//     const struct TRITONBACKEND_Batcher* batcher, void** userp);
 
-/// Callback to be invoked when Triton has finishing forming a batch.
-///
-/// \param userp The placeholder for backend to store and retrieve information
-/// about this pending batch.
-/// \return a TRITONSERVER_Error indicating success or failure.
-TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatchFinalize(
-    void* userp);
+// /// Callback to be invoked when Triton has finishing forming a batch.
+// ///
+// /// \param userp The placeholder for backend to store and retrieve information
+// /// about this pending batch.
+// /// \return a TRITONSERVER_Error indicating success or failure.
+// TRITONBACKEND_ISPEC struct TRITONSERVER_Error* TRITONBACKEND_ModelBatchFinalize(
+//     void* userp);
 
 #ifdef __cplusplus
 }

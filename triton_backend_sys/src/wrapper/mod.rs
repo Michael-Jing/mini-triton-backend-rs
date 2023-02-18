@@ -1,9 +1,10 @@
-use std::ffi::CStr;
+use std::ffi;
+use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 use std::mem;
 use std::mem::MaybeUninit;
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+use super::sys::*;
 
 #[derive(Debug)]
 pub struct TritonError {
@@ -20,11 +21,11 @@ pub struct Input {
 #[derive(Debug)]
 pub struct InputProperties<'a> {
     name: &'a str,
-    datatype: TRITONSERVER_DataType,
+    pub datatype: TRITONSERVER_DataType,
     shape: Option<&'a [i64]>,
     dims_count: u32,
     byte_size: u64,
-    buffer_count: u32,
+    pub buffer_count: u32,
     phantom: PhantomData<&'a Input>,
 }
 

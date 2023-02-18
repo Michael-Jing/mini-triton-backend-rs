@@ -25,13 +25,5 @@ fn main() -> miette::Result<()> {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 
-    // let path = std::path::PathBuf::from("src"); // include path
-    // let mut b = autocxx_build::Builder::new("src/lib.rs", &[&path])
-    //     .build()
-    //     .unwrap();
-    // // This assumes all your C++ bindings are in lib.rs
-    // b.flag_if_supported("-std=c++20")
-    //     .compile("exp-mini-backend"); // arbitrary library name, pick anything
-    // println!("cargo:rerun-if-changed=src/lib.rs");
     Ok(())
 }

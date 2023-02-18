@@ -1,0 +1,16 @@
+[package]
+name = "triton_backend_sys"
+version = "0.1.0"
+edition = "2021"
+
+# # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# [lib]
+# name = "triton_backend_sys"
+# crate-type=["cdylib"]
+[dependencies]
+
+[build-dependencies]
+miette = { version = "5.5.0", features = [
+  "fancy",
+] } # optional but gives nicer error messages!
+bindgen = "0.64.0"
