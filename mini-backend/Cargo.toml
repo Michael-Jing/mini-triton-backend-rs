@@ -1,0 +1,19 @@
+[package]
+name = "exp-mini-backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "triton_minimal"
+crate-type=["cdylib"]
+[dependencies]
+cuda11-cuda-sys = {git="https://github.com/Michael-Jing/cuda-sys.git"}
+triton_backend_sys = { path = "../triton_backend_sys" }
+
+
+[build-dependencies]
+miette = { version = "5.5.0", features = [
+  "fancy",
+] } # optional but gives nicer error messages!
+bindgen = "0.64.0"
