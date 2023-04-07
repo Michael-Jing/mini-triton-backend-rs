@@ -31,3 +31,10 @@ Minimal Nvidia [Triton Inference Server](https://github.com/triton-inference-ser
 ```
 	python clients/minimal_client
 ```
+
+# Issues
+2. objects and bytes type are not supported
+3. how to get the a pointer to the underlying memory buffer (use jl_array_data)
+4. how to get data size in bytes (jl_array_len() * size of element)
+5. how to get array shape (maybe keep using jl_array_len() for several times)
+6. Julia must permute dims before it passing data to rust

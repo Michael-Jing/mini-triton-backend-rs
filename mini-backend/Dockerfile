@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/tritonserver:22.08-py3 
+FROM nvcr.io/nvidia/tritonserver:22.11-py3 
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -16,6 +16,9 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 #     && rm -rf /cmake-${CMAKE_VERSION} && rm cmake-${CMAKE_VERSION}.tar.gz \
 #     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ENV PATH=$PATH:$HOME/.cargo/bin
+RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.8/julia-1.8.5-linux-x86_64.tar.gz \
+&& tar zxvf julia-1.8.5-linux-x86_64.tar.gz
+
+ENV PATH=$PATH:$HOME/.cargo/bin:/opt/tritonserver/julia-1.8.5
 
 WORKDIR /workspace

@@ -8,8 +8,17 @@ edition = "2021"
 name = "triton_minimal"
 crate-type=["cdylib"]
 [dependencies]
-cuda11-cuda-sys = {git="https://github.com/Michael-Jing/cuda-sys.git"}
+# cuda11-cuda-sys = {git="https://github.com/Michael-Jing/cuda-sys.git"}
 triton_backend_sys = { path = "../triton_backend_sys" }
+ jlrs = {git="https://github.com/Taaitaaiger/jlrs.git", branch="dev",features = ["jlrs-ndarray", "sync-rt", "julia-1-8", "f16", "jlrs-derive", "ccall", "extra-fields"]}
+ jl-sys = {git="https://github.com/Taaitaaiger/jlrs.git", branch="dev"}
+ dlpackrs = "0.2.0"
+ ndarray = "0.15.6"
+# julia = "0.2.5"
+# jlrs = {path="../jlrs/jlrs", features = ["jlrs-ndarray", "tokio-rt", "sync-rt", "julia-1-8", "f16"]}
+# jl-sys = {path="../jlrs/jl_sys"}
+
+half = "2.2.1"
 
 
 [build-dependencies]
@@ -17,3 +26,6 @@ miette = { version = "5.5.0", features = [
   "fancy",
 ] } # optional but gives nicer error messages!
 bindgen = "0.64.0"
+
+[registries.crates-io]
+protocol = "sparse"

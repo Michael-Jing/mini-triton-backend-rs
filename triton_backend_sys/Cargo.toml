@@ -14,3 +14,6 @@ miette = { version = "5.5.0", features = [
   "fancy",
 ] } # optional but gives nicer error messages!
 bindgen = "0.64.0"
+
+[registries.crates-io]
+protocol = "sparse"

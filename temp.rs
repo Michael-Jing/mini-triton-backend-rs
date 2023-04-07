@@ -1,7 +1,3 @@
-use std::ffi;
-
-use crate::sys::*;
-
 pub struct BackendInputCollector {}
 pub struct InputIterator {
     /*TRITONBACKEND_Request** requests_;
@@ -47,21 +43,6 @@ pub struct ContiguousBuffer {
     end_request_idx_: usize,
     memory_desc_: MemoryDesc,
 }
-/*
-macro_rules! RESPOND_AND_SET_NULL_IF_ERROR {
-    ($R: iden, $X: expr) => {
-        let rarie_err__ = $X;
-        if !rarie_err__.is_null(){
-            LOG_IF_ERROR!(
-                TRITONBACKEND_ResponseSend($R, TRITONSERVER_RESPONSE_COMPLETE_FINAL, rarie_err__),
-                "failed to send error response"
-            );
-            // $R = nullptr
-            TRITONSERVER_ErrorDelete(rarie_err__);
-        }
-    };
-}
-*/
 impl InputIterator {
     pub fn GetNextContiguousInput(&mut self, input: *mut ContiguousBuffer) -> bool {
         if self.reach_end_ || self.curr_buffer_idx_ >= self.curr_buffer_cnt_ {
@@ -91,47 +72,20 @@ impl InputIterator {
                 // just return, which indicates that only one buffer is processed
                 // move to next request
                 self.curr_request_idx_ += 1;
-                if (self.curr_request_idx_ < self.request_count_ as usize) {
+                if (self.curr_request_idx_ < self.request_count_) {
                     let response = self.responses_[self.curr_request_idx_];
                     // set curr_input_, curr_buffer_idx_ and curr_buffer_cnt to reflect the reality on the new request
                     // if unable to get input, response with error
-                    let err = unsafe {
+                    RESPOND_AND_SET_NULL_IF_ERROR(
+                        &response,
                         TRITONBACKEND_RequestInput(
-                            *self.requests_.offset(self.curr_request_idx_ as isize),
-                            self.input_name_,
-                            &mut self.curr_input_,
-                        )
-                    };
-                    unsafe {
-                        if !err.is_null() {
-                            if !self
-                                .requests_
-                                .offset(self.curr_request_idx_ as isize)
-                                .is_null()
-                            {
-                                let err = TRITONBACKEND_ResponseSend(
-                                    response,
-                                    tritonserver_responsecompleteflag_enum_TRITONSERVER_RESPONSE_COMPLETE_FINAL,
-                                    err,
-                                );
-                                if !err.is_null() {
-                                    // do logging
-                                }
-                            }
-                            TRITONSERVER_ErrorDelete(err);
-                        }
-                    }
-                    /*                  RESPOND_AND_SET_NULL_IF_ERROR(
-                                           &response,
-                                           TRITONBACKEND_RequestInput(
-                                               requests_[curr_request_idx_],
-                                               input_name_,
-                                               &curr_input_,
-                                           ),
-                                       );
-                    */
+                            requests_[curr_request_idx_],
+                            input_name_,
+                            &curr_input_,
+                        ),
+                    );
                     // if unable to get InputProperties, response with error
-                    /* RESPOND_AND_SET_NULL_IF_ERROR(
+                    RESPOND_AND_SET_NULL_IF_ERROR(
                         &response,
                         TRITONBACKEND_InputPropertiesForHostPolicy(
                             curr_input_,
@@ -143,22 +97,11 @@ impl InputIterator {
                             nullptr,
                             &curr_buffer_cnt_,
                         ),
-                    ); */
-                    let err = unsafe {
-                        TRITONBACKEND_InputPropertiesForHostPolicy(
-                            self.curr_input_,
-                            self.host_policy_,
-                            std::ptr::null_mut() as *mut *const i8,
-                            std::ptr::null_mut() as *mut TRITONSERVER_DataType,
-                            std::ptr::null_mut() as *mut *const i64,
-                            std::ptr::null_mut() as *mut u32,
-                            std::ptr::null_mut() as *mut u64,
-                            &mut self.curr_buffer_cnt_,
-                        )
-                    }; // reset buffer idx, so can start to process buffer of current request in next call
-                    self.curr_buffer_idx_ = 0;
+                    );
+                    // reset buffer idx, so can start to process buffer of current request in next call
+                    curr_buffer_idx_ = 0;
                 } else {
-                    self.reach_end_ = true;
+                    reach_end_ = true;
                 }
             }
             // please come back later
