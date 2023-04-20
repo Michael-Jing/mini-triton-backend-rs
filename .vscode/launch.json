@@ -5,6 +5,8 @@
     "version": "0.2.0",
     "configurations": [
         
+
+        
         {
             "type": "lldb",
             "request": "launch",
@@ -24,7 +26,8 @@
             "args": [],
             "cwd": "${workspaceFolder}",
             "initCommands":["settings set target.disable-aslr false"] ,
-             "env": {"LD_LIBRARY_PATH": "$LD_LIBRARY_PATH:/opt/tritonserver/lib/:/opt/tritonserver/julia-1.8.5/lib/:/home/mi/apps/miniconda3/envs/julia/lib:/home/mi/apps/julia-1.8.5/lib/", "GOFLAGS": "-buildvcs=false",
+            "env": {"LD_LIBRARY_PATH": "$LD_LIBRARY_PATH:/opt/tritonserver/lib/:/opt/tritonserver/julia-1.8.5/lib/:/home/mi/apps/miniconda3/envs/julia/lib:/home/mi/apps/julia-1.8.5/lib/",
+             "GOFLAGS": "-buildvcs=false",
                     "CPATH": "/opt/tritonserver/include:/home/mi/apps/miniconda3/envs/julia/include/julia:/home/mi/apps/julia-1.8.5/include/julia",
                     "JULIA_DIR": "/home/mi/apps/julia-1.8.5"
 

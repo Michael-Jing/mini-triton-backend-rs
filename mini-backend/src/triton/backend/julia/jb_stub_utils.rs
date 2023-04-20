@@ -1,6 +1,6 @@
 use std::{ffi::{c_void, self}, slice};
 
-use jlrs::{prelude::*, data::managed::{array::dimensions::Dims, datatype}};
+use jlrs::{prelude::*, wrappers::ptr::array::dimensions::Dims};
 use triton_backend_sys::sys::*;
 use ndarray;
 
@@ -144,11 +144,10 @@ mod tests {
     use jl_sys::jl_init;
     use jl_sys::*;
     use jlrs::convert::ndarray::NdArrayView;
-    use jlrs::data::managed::array::data::accessor::ArrayAccessor;
-    use jlrs::data::managed::array::dimensions::{Dimensions, Dims};
     use jlrs::memory::target::frame::GcFrame;
     use jlrs::prelude::*;
     use jlrs::prelude::{Array, Julia, RuntimeBuilder, TypedArray, Value};
+    use jlrs::wrappers::ptr::array::dimensions::Dims;
 
     use super::jl_to_triton_type_v1;
     use triton_backend_sys::sys::*;

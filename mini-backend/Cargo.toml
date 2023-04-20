@@ -10,8 +10,8 @@ crate-type=["cdylib"]
 [dependencies]
 # cuda11-cuda-sys = {git="https://github.com/Michael-Jing/cuda-sys.git"}
 triton_backend_sys = { path = "../triton_backend_sys" }
- jlrs = {git="https://github.com/Taaitaaiger/jlrs.git", branch="dev",features = ["jlrs-ndarray", "sync-rt", "julia-1-8", "f16", "jlrs-derive", "ccall", "extra-fields"]}
- jl-sys = {git="https://github.com/Taaitaaiger/jlrs.git", branch="dev"}
+jlrs = {git="https://github.com/Taaitaaiger/jlrs.git", features = ["jlrs-ndarray", "sync-rt", "f16", "jlrs-derive", "ccall", "extra-fields"]}
+jl-sys = {git="https://github.com/Taaitaaiger/jlrs.git" }
  dlpackrs = "0.2.0"
  ndarray = "0.15.6"
 # julia = "0.2.5"

@@ -1,3 +1,4 @@
+import JlrsReflect
 struct JbTensor
     name::String
     dtype::UInt32
@@ -28,12 +29,12 @@ struct InferRequest
 end
 
 
-# wrappers = JlrsReflect.reflect([JbTensor, JbError, InferRequest, InferResponse ]);
+wrappers = JlrsReflect.reflect([JbTensor, JbError, InferRequest, InferResponse ]);
 
 # Print wrappers to standard output
-# println(wrappers)
+println(wrappers)
 
 # Write wrappers to file
-# open("julia_wrappers.rs", "w") do f
-#    write(f, wrappers)
-# end
+open("julia_wrappers2.rs", "w") do f
+   write(f, wrappers)
+end
