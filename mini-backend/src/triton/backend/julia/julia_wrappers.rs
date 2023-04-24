@@ -1,4 +1,4 @@
-use jlrs::prelude::*;
+use jlrs::{prelude::*, data::managed};
 
 #[repr(C)]
 #[derive(Clone, Debug, Unbox, ValidLayout, Typecheck, ValidField, ConstructType, CCallArg, CCallReturn)]
@@ -45,6 +45,7 @@ pub struct JbTensor<'scope, 'data> {
 
 #[cfg(test)]
 mod tests {
+    use std::any::Any;
     use std::ffi::c_void;
 
     use jlrs::convert::into_julia::IntoJulia;
@@ -101,12 +102,25 @@ mod tests {
                     memory_ptr: Some(array2.as_ref()), memory_type: 0, memory_type_id: 0, byte_size: 12
                 };
 
-                let mut input_data = vec![tensor1, tensor2];
+                let tensor1_value = tensor1.as_value();
+
                 // let input_data = Array::from_slice(frame.as_extended_target(), &mut input_data, (1,2)).unwrap().unwrap();
 
                 let julia_test_string = JuliaString::new(&mut frame, "test"); 
-                let requested_output_names = Array::new_for(frame.as_extended_target(), (1, 2), DataType::string_type(&julia_test_string).as_value());
+                let julia_test_string2 = JuliaString::new(&mut frame, "test2");
+                let requested_output_names = Array::new_for(frame.as_extended_target(), (1, 2), DataType::string_type(&frame).as_value()).unwrap();
+                unsafe { 
+                   let mutter = requested_output_names.managed_data_mut::<StringRef>().unwrap();
+                   mutter.set(0, Some(julia_test_string.as_value()));
+                   mutter.set(1, Some(julia_test_string2.as_value()));
+                }
 
+                let inputs = Array::new_for(frame.as_extended_target(), (1, 2), DataType::any_type(&frame).as_value()).unwrap();
+                unsafe {
+                    let mutter = inputs.managed_data_mut().unwrap();
+                    mutter.set(0, Some(tensor1.as_value()));
+                    mutter.set(1,  Some(tensor2.as_value()));
+                }
 
                 let infer_request = InferRequest {
                     request_id: Some(JuliaString::new(&mut frame, "0").as_ref()),
@@ -114,8 +128,8 @@ mod tests {
                     model_name: Some(JuliaString::new(&mut frame, "test").as_ref()),
                     model_version: 1,
                     flags: 0,
-                    // inputs: input_data,
-                    // requested_output_names: requested_output_names,
+                    inputs: Some(inputs.as_ref()),
+                    requested_output_names: Some(requested_output_names.as_ref()),
                 };
                 let func2 = Module::main(&frame).function(&mut frame, "mydot" )?;
                 let array_pointer = unsafe { func2.call2(&mut frame, array1, array2) }
