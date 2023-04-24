@@ -3,8 +3,8 @@ use std::sync::Mutex;
 
 use super::jb_exception::JuliaBackendException;
 use super::jb_stub_utils::{jl_to_triton_type_v1, data_pointer, nbytes};
+use jlrs::data::managed::array::dimensions::Dims;
 use jlrs::prelude::*;
-use jlrs::wrappers::ptr::array::dimensions::Dims;
 use triton_backend_sys::sys::*;
 
 

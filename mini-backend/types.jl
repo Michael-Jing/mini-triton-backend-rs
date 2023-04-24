@@ -1,4 +1,4 @@
-import JlrsReflect
+using JlrsCore.Reflect
 struct JbTensor
     name::String
     dtype::UInt32
@@ -29,7 +29,7 @@ struct InferRequest
 end
 
 
-wrappers = JlrsReflect.reflect([JbTensor, JbError, InferRequest, InferResponse ]);
+wrappers = reflect([JbTensor, JbError, InferRequest, InferResponse ]);
 
 # Print wrappers to standard output
 println(wrappers)
