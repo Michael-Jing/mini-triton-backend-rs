@@ -18,5 +18,6 @@ services:
     environment:
       JULIA_DIR: "/opt/tritonserver/julia-1.8.5"
       LD_LIBRARY_PATH: "/opt/tritonserver/julia-1.8.5/lib/:$LD_LIBRARY_PATH"
+      PATH: "$PATH:/opt/tritonserver/julia-1.8.5/bin/"
 
 

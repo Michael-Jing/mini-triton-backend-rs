@@ -4,6 +4,10 @@ struct JbTensor
     dtype::UInt32
     dims::Vector{Int64}
     memory_ptr::Union{Array{Real, 1}, Array{Real, 2}, Array{Real, 3}, Array{Real, 4}}
+    memory_ptr1d::Array{Real, 1}
+    memory_ptr2d::Array{Real, 2}
+    memory_ptr3d::Array{Real, 3}
+    memory_ptr4d::Array{Real, 4}
     memory_type_id::Int64
     memory_type::UInt32
     byte_size::UInt64
