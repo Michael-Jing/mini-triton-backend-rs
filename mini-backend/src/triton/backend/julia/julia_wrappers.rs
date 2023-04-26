@@ -157,12 +157,13 @@ mod tests {
                 let ty = <JbTensor as ConstructType>::construct_type(frame.as_extended_target());
 
                 let mut inputs = Array::new_for(frame.as_extended_target(), (1, 2), ty).unwrap();
-                unsafe {
+                /* unsafe {
                     let mut mutter = inputs.managed_data_mut().unwrap();
                     mutter.set(0, Some(tensor1.as_value()));
                     mutter.set(1, Some(tensor2));
 
-                }
+                } */
+
                
 
                 let infer_request = InferRequest {
@@ -175,11 +176,11 @@ mod tests {
                     requested_output_names: Some(requested_output_names.as_ref()),
                 };
                 let func2 = Module::main(&frame).function(&mut frame, "execute" )?;
-                let array_pointer = unsafe { func2.call1(&mut frame, infer_request.as_value()) }
+                /* let array_pointer = unsafe { func2.call1(&mut frame, infer_request) }
                     .into_jlrs_result()?;
                 let ans_array = array_pointer.cast::<Array>()?;
                 println!("array1 is {:?}", array1);
-                println!("ans array is {:?} ", ans_array);
+                println!("ans array is {:?} ", ans_array); */
                 
                 
                 

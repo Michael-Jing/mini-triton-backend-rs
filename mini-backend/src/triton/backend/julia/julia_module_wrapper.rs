@@ -3,6 +3,13 @@ use jlrs::{
     prelude::*,
 };
 
+use crate::triton::backend::julia::jb_tensor::JbTensor;
+
+julia_module! {
+    become triton_backend_jl_init;
+    struct JbTensor as Tensor;
+
+}
 
 /* 
 julia_module! {

@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use super::jb_exception::JuliaBackendException;
 use super::jb_stub_utils::{jl_to_triton_type_v1, data_pointer, nbytes};
 use jlrs::data::managed::array::dimensions::Dims;
+use jlrs::data::types::foreign_type::OpaqueType;
 use jlrs::prelude::*;
 use triton_backend_sys::sys::*;
 
@@ -11,14 +12,15 @@ use triton_backend_sys::sys::*;
 pub struct JbTensor {
     name_: String,
     dtype_: TRITONSERVER_DataType,
-    memory_ptr_: *const c_void,
+    memory_ptr_: *const c_void, //TODO: deal with c_void is not Send issue
     memory_type_id_: i64,
     dims_: Vec<usize>,
     memory_type_: TRITONSERVER_MemoryType,
     byte_size_: usize,
-
-
 }
+
+unsafe impl Send for JbTensor {}
+unsafe impl OpaqueType for JbTensor {}
 
 impl JbTensor {
     pub fn from_jl_array(name: &str, jl_array: &Array) -> Result<Self, JuliaBackendException> {
@@ -47,5 +49,9 @@ impl JbTensor {
             memory_type_,
             byte_size_
         });
+    }
+
+    pub fn print_ele(&self) {
+
     }
 }
